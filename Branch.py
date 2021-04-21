@@ -24,6 +24,30 @@ class IllegalCharError(Error):
     def __init__(self, pos_start, pos_end, details):
         super().__init__(pos_start, pos_end, 'Illegal Character', details)
 
+#######################################
+# POSITION
+#######################################
+
+class Position:
+    def __init__(self, idx, ln, col, fn, ftxt):
+        self.idx = idx
+        self.ln = ln
+        self.col = col
+        self.fn = fn
+        self.ftxt = ftxt
+
+    def advance(self, current_char):
+        self.idx += 1
+        self.col += 1
+
+        if current_char == '\n':
+            self.ln += 1
+            self.col = 0
+
+        return self
+
+    def copy(self):
+        return Position(self.idx, self.ln, self.col, self.fn, self.ftxt)
 
 #######################################
 # TOKENS
@@ -39,7 +63,7 @@ TT_LPAREN   = 'LPAREN'
 TT_RPAREN   = 'RPAREN'
 
 class Token:
-    def __init__(self, type_,value):
+    def __init__(self, type_, value=None):
         self.type = type_
         self.value = value
     
@@ -96,6 +120,24 @@ class Lexer:
                 return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
 
         return tokens, None
+
+    def make_number(self):
+        num_str = ''
+        dot_count = 0
+
+        while self.current_char != None and self.current_char in DIGITS + '.':
+            if self.current_char == '.':
+                if dot_count == 1: break
+                dot_count += 1
+                num_str += '.'
+            else:
+                num_str += self.current_char
+            self.advance()
+
+        if dot_count == 0:
+            return Token(TT_INT, int(num_str))
+        else:
+            return Token(TT_FLOAT, float(num_str))
 
 #######################################
 # RUN
